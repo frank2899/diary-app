@@ -1,0 +1,8 @@
+{
+  "name": "Diary",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite",
+  "id": "b9621171"
+}
