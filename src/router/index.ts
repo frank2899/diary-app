@@ -10,14 +10,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/panel',
     component: () => import('@/views/Panel.vue')
   },
-  // {
-  //   path: 'tab2',
-  //   component: () => import('@/views/Tab2Page.vue')
-  // },
-  // {
-  //   path: 'tab3',
-  //   component: () => import('@/views/Tab3Page.vue')
-  // }
+  {
+    path: '/panel/:year/:month/:day',
+    component: () => import('@/views/Diary.vue'),
+    props: true
+  },
 ]
 
 const router = createRouter({

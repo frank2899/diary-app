@@ -47,8 +47,9 @@
 </template>
 
 <script setup lang="ts">
+import chevronBackOutline from '../../resources/icons/chevron-back-outline.svg'
+import chevronForwardOutline from '../../resources/icons/chevron-forward-outline.svg'
 import { IonPage, IonContent, IonButton } from '@ionic/vue';
-import { chevronBackOutline, chevronForwardOutline } from 'ionicons/icons'
 import { useRouter } from 'vue-router';
 import { generateYearCalendar, YearCalendar } from '../utils/calendar'
 import { ref, Ref, computed } from 'vue'
@@ -107,6 +108,7 @@ const isToday = (day: number, monthName: string): boolean => {
 const selectDay = (day: number, monthIndex: number): void => {
     selectedDay.value = day
     selectedMonth.value = monthIndex
+    goToPage(`/panel/${year.value}/${monthIndex}/${day}`)
 }
 
 const goToPage = (path: string) => router.push(path)
@@ -146,7 +148,7 @@ section {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    margin-top: 2rem;
+    margin-top: 3rem;
 }
 
 .calendar-grid {
