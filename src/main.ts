@@ -34,8 +34,17 @@ import '@ionic/vue/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
+/* State Management */
+import { createPinia } from 'pinia'
+
+/* Swiper */
+import 'swiper/css';
+import '@ionic/vue/css/ionic-swiper.css';
+
+const pinia = createPinia()
 const app = createApp(App)
   .use(IonicVue)
+  .use(pinia)
   .use(router);
 
 router.isReady().then(() => {
