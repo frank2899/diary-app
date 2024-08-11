@@ -115,7 +115,7 @@ const save = async () => {
     }
     catch(error){
         const toast = await toastController.create({
-            message: error,
+            message: error as string,
             duration: 1500,
             position: 'top',
             mode: 'ios'        
