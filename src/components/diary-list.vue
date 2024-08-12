@@ -6,7 +6,11 @@
         </div>
         <div class="diary-content">
             <div class="feeling-section">
-                <img :src='`../../resources/images/${entry.feeling}.png`'/>
+                <img v-if="entry.feeling === 'angry'" src="../../resources/images/angry.png"/>
+                <img v-if="entry.feeling === 'sad'" src="../../resources/images/sad.png"/>
+                <img v-if="entry.feeling === 'neutral'" src="../../resources/images/neutral.png"/>
+                <img v-if="entry.feeling === 'happy'" src="../../resources/images/happy.png"/>
+                <img v-if="entry.feeling === 'joy'" src="../../resources/images/joy.png"/>
                 <small>- FEELS {{entry.feeling?.toUpperCase()}}</small>
             </div>
             <p>{{ truncateText(entry.content) }}</p>
