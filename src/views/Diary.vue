@@ -8,46 +8,84 @@
             <section>
                 <div class="header">
                     <ion-icon slot="icon-only" :icon="chevronBackOutline" style="color:#403B36;font-size: 15px;" @click="goToPage('/panel')"></ion-icon>
-                    <h3>{{ readableDate }}</h3>
-                </div>
-                <h3 class="questions">How are you feeling?</h3>
-                <swiper
-                    :slidesPerView="'auto'"
-                    :spaceBetween="10"
-                    :pagination="{
-                        clickable: true,
-                    }"
-                    class="emoji-swiper"
-                >
-                    <swiper-slide v-for="(emoji, index) in emojis" :key="index">
-                        <div :class="['emoji-container', feeling === emoji.name.toLowerCase() ? 'selected-emoji' : '']" @click="selectFeeling(emoji.name.toLowerCase())">
-                            <div>
-                                <h6>{{ emoji.name }}</h6>
-                                <img :src="emoji.image?.toLowerCase()" :alt="emoji.name"/>
-                            </div>
-                        </div>
-                    </swiper-slide>
-                </swiper>
-
-
-                <h3 class="questions">What's affecting your mood?</h3>
-                <div class="mood-container">
-                    <ion-chip :outline="true" :class="['mood-chip', mood === moodName ? 'selected-mood' : '']" @click="selectMood(moodName)" v-for="(moodName, index) in affectingMood" :key="index">{{ moodName }}</ion-chip>
+                    <h3>{{ readableDate.format('MMMM D, YYYY') }}</h3>
                 </div>
 
-                <h3 class="questions">How is your day going?</h3>
-                <div class="content-container">
-                    <ion-textarea
-                        placeholder="Start Writing here.."
-                        class="content-area"
-                        :auto-grow="true"
-                        :value="content"
+                <div v-if="isFetching" style="margin-top:3rem">
+                    <Loader />
+                </div>
+                <div v-else>
+                    <h3 class="questions">How are you feeling?</h3>
+                    <swiper
+                        :slidesPerView="'auto'"
+                        :spaceBetween="10"
+                        :pagination="{
+                            clickable: true,
+                        }"
+                        class="emoji-swiper"
                     >
-                    </ion-textarea>
-                </div>
+                        <swiper-slide>
+                            <div :class="['emoji-container', feeling === 'angry' ? 'selected-emoji' : '']" @click="selectFeeling('angry')">
+                                <div>
+                                    <h6>Angry</h6>
+                                    <img src="../../resources/images/angry.png"/>
+                                </div>
+                            </div>
+                        </swiper-slide>
+                        <swiper-slide>
+                            <div :class="['emoji-container', feeling === 'sad' ? 'selected-emoji' : '']" @click="selectFeeling('sad')">
+                                <div>
+                                    <h6>Sad</h6>
+                                    <img src="../../resources/images/sad.png"/>
+                                </div>
+                            </div>
+                        </swiper-slide>
+                        <swiper-slide>
+                            <div :class="['emoji-container', feeling === 'neutral' ? 'selected-emoji' : '']" @click="selectFeeling('neutral')">
+                                <div>
+                                    <h6>Neutral</h6>
+                                    <img src="../../resources/images/neutral.png"/>
+                                </div>
+                            </div>
+                        </swiper-slide>
+                        <swiper-slide>
+                            <div :class="['emoji-container', feeling === 'happy' ? 'selected-emoji' : '']" @click="selectFeeling('happy')">
+                                <div>
+                                    <h6>Happy</h6>
+                                    <img src="../../resources/images/happy.png"/>
+                                </div>
+                            </div>
+                        </swiper-slide>
+                        <swiper-slide>
+                            <div :class="['emoji-container', feeling === 'joy' ? 'selected-emoji' : '']" @click="selectFeeling('joy')">
+                                <div>
+                                    <h6>Joy</h6>
+                                    <img src="../../resources/images/joy.png"/>
+                                </div>
+                            </div>
+                        </swiper-slide>
+                    </swiper>
 
-                <div class="submit-btn">
-                    <ion-button @click="save()">SAVE</ion-button>
+
+                    <h3 class="questions">What's affecting your mood?</h3>
+                    <div class="mood-container">
+                        <ion-chip :outline="true" :class="['mood-chip', mood === moodName ? 'selected-mood' : '']" @click="selectMood(moodName)" v-for="(moodName, index) in affectingMood" :key="index">{{ moodName }}</ion-chip>
+                    </div>
+
+                    <h3 class="questions">How is your day going?</h3>
+                    <div class="content-container">
+                        <ion-textarea
+                            placeholder="Start Writing here.."
+                            class="content-area"
+                            :auto-grow="true"
+                            v-model="content"
+                        >
+                        </ion-textarea>
+                    </div>
+
+                    <div class="submit-btn" v-if="!isSaving">
+                        <ion-button @click="save()">SAVE</ion-button>
+                    </div>
                 </div>
             </section>
         </ion-content>
@@ -58,11 +96,14 @@
 import chevronBackOutline from '../../resources/icons/chevron-back-thick.svg'
 import { IonPage, IonContent, IonButton, IonChip, IonTextarea, IonIcon, toastController } from '@ionic/vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ref, Ref, computed } from 'vue'
-import DiaryList from '@/components/diary-list.vue'
+import { ref, Ref, computed, onMounted } from 'vue'
 import moment from 'moment-timezone'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import 'swiper/css'
+import { useDiarySore } from '@/store'
+import Loader from '@/components/loader.vue'
+
+const { handleCreateDiary, handleUpdateDiary, handleGetDiary } = useDiarySore()
 
 const router = useRouter()
 const route = useRoute()
@@ -70,16 +111,11 @@ const route = useRoute()
 const year = computed(() => route.params.year ?? moment.tz('Asia/Manila').format('YYYY'))
 const month = computed(() => route.params.month ?? moment.tz('Asia/Manila').format('MM'))
 const day = computed(() => route.params.day ?? moment.tz('Asia/Manila').format('DD'))
+const hasDiary: Ref<boolean> = ref(false)
+const isFetching: Ref<boolean> = ref(false)
+const isSaving: Ref<boolean> = ref(false)
 
-const readableDate = computed(() => moment.tz(`${year.value}-${month.value.toString().padStart(2, '0')}-${day.value.toString().padStart(2, '0')}`, 'Asia/Manila').format('MMMM D, YYYY'))
-
-const emojis = ref([
-    { name: 'Angry', image: '../../resources/images/angry.png' },
-    { name: 'Sad', image: '../../resources/images/sad.png' },
-    { name: 'Neutral', image: '../../resources/images/neutral.png' },
-    { name: 'Happy', image: '../../resources/images/happy.png' },
-    { name: 'Joy', image: '../../resources/images/joy.png' }
-])
+const readableDate = computed(() => moment.tz(`${year.value}-${(Number(month.value) + 1).toString().padStart(2, '0')}-${day.value.toString().padStart(2, '0')}`, 'Asia/Manila'))
 
 const affectingMood = [
     "Work",
@@ -109,9 +145,24 @@ const selectMood = (params: string) => mood.value = params
 
 const save = async () => {
     try{
+        isSaving.value = true
         if(!feeling.value?.trim()) throw 'Please select how you are feeling'
         if(!mood.value?.trim()) throw 'Please select the main factor affecting your mood.'
-        if(!content.value?.trim()) throw 'Please write a brief description of how your day is going.'
+        if(!content.value?.trim().length) throw 'Please write a brief description of how your day is going.'
+
+        const payload = {
+            mood: mood.value,
+            feeling: feeling.value,
+            content: content.value,
+            date: moment.tz(`${year.value}-${(Number(month.value) + 1).toString().padStart(2, '0')}-${day.value.toString().padStart(2, '0')}`, 'Asia/Manila').toDate()
+        }
+
+        if(hasDiary.value) await handleUpdateDiary(payload)
+        else await handleCreateDiary(payload)
+
+        handleFetchDiary()
+
+        throw 'Successfully Saved!'
     }
     catch(error){
         const toast = await toastController.create({
@@ -123,9 +174,46 @@ const save = async () => {
 
         await toast.present()
     }
+    finally{
+        isSaving.value = false
+    }
 }
 
 const goToPage = (path: string) => router.push(path)
+
+const handleFetchDiary = async () => {
+    try{
+        isFetching.value = true
+        const getDiary = await handleGetDiary(moment.tz(`${year.value}-${(Number(month.value) + 1).toString().padStart(2, '0')}-${day.value.toString().padStart(2, '0')}`, 'Asia/Manila').format('MM-DD-YYYY'))
+
+        hasDiary.value = !!getDiary?.data
+
+        if(!!getDiary.data){
+            const data = getDiary.data
+
+            mood.value = data.mood
+            feeling.value = data.feeling
+            content.value = data.content
+        }
+    }
+    catch(error){
+        const toast = await toastController.create({
+            message: error as string,
+            duration: 1500,
+            position: 'top',
+            mode: 'ios'        
+        })
+
+        await toast.present()
+    }
+    finally{
+        isFetching.value = false
+    }
+}
+
+onMounted(() => {
+    handleFetchDiary()
+})
 </script>
 
 <style scoped>

@@ -1,19 +1,37 @@
 <template>
-    <div class="diary-card">
+    <div class="diary-card" v-for="(entry, index) in props.entries" :key="index">
         <div class="diary-date">
-            <h1 style="margin-top: unset;">01</h1>
-            <h6 style="margin-top: unset;margin-bottom: unset;">TH</h6>
+            <h1 style="margin-top: unset;">{{ formatDate(entry.date.toString()).day }}</h1>
+            <h6 style="margin-top: unset;margin-bottom: unset;">{{ formatDate(entry.date.toString()).weekday }}</h6>
         </div>
         <div class="diary-content">
             <div class="feeling-section">
-                <img src="../../resources/images/happy.png"/>
-                <small>- FEELS HAPPY</small>
+                <img :src='`../../resources/images/${entry.feeling}.png`'/>
+                <small>- FEELS {{entry.feeling?.toUpperCase()}}</small>
             </div>
-            <p>{{ truncateText("Lorem ipsum, dolor sit amet consectetur adipisicing elit. Maxime enim, totam porro, alias cum culpa est dolorem quidem, praesentium eius accusantium! Maiores tenetur magnam aliquid magni eum. Quos, in molestias.") }}</p>
+            <p>{{ truncateText(entry.content) }}</p>
         </div>
     </div>
 </template>
 <script setup lang="ts">
+import { defineProps } from 'vue'
+import moment from 'moment-timezone'
+
+const props = defineProps<{
+    entries: Array<{
+        mood: string,
+        feeling: string,
+        content: string,
+        date: Date
+    }>
+}>()
+const formatDate = (date: string) => {
+    const momentDate = moment.tz(date, 'Asia/Manila')
+    return {
+        day: momentDate.format('DD'),
+        weekday: momentDate.format('dd').toUpperCase().split('')[0]
+    }
+}
 const truncateText = (text: string, length: number = 105): string => {
   return text.length > length ? text.substring(0, length) + '...' : text;
 }

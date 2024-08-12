@@ -8,7 +8,10 @@
             <section>
                 <h3 id="greetings">Here’s how you’re feeling for this month.</h3>
 
-                <EmojiSwiper/>
+                <div style="margin:2rem" v-if="isFetching">
+                    <Loader/>
+                </div>
+                <EmojiSwiper :counts="moodCounts" v-else/>
 
                 <div class="navigation-buttons">
                     <ion-button @click="previousMonth" style="--border-radius:15px;--background:#FFFDFA;">
@@ -40,7 +43,11 @@
                     </div>
                 </div>
 
-                <DiaryList/>
+
+                <div style="margin:2rem" v-if="isFetching">
+                    <Loader/>
+                </div>
+                <DiaryList :entries="monthDiaryList" v-else/>
             </section>
         </ion-content>
     </ion-page>
@@ -49,13 +56,18 @@
 <script setup lang="ts">
 import chevronBackOutline from '../../resources/icons/chevron-back-outline.svg'
 import chevronForwardOutline from '../../resources/icons/chevron-forward-outline.svg'
-import { IonPage, IonContent, IonButton } from '@ionic/vue';
+import { IonPage, IonContent, IonButton, toastController } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 import { generateYearCalendar, YearCalendar } from '../utils/calendar'
-import { ref, Ref, computed } from 'vue'
+import { ref, Ref, computed, onMounted } from 'vue'
 import EmojiSwiper from '@/components/emoji-swiper.vue'
 import DiaryList from '@/components/diary-list.vue'
 import moment from 'moment-timezone'
+import { useDiarySore } from '@/store'
+import Loader from '@/components/loader.vue'
+import { Diary } from '@/store/types';
+
+const { handleGetMonthDiary } = useDiarySore()
 
 const router = useRouter()
 
@@ -65,6 +77,9 @@ const month: Ref<number> = ref(currentDate.month())
 const calendarData: Ref<YearCalendar> = ref(generateYearCalendar(year.value, month.value))
 const selectedDay: Ref<number | null> = ref(null)
 const selectedMonth: Ref<number | null> = ref(null)
+const moodCounts: Ref<{ [key: string]: number }> = ref({})
+const monthDiaryList: Ref<Diary[]> = ref([])
+const isFetching: Ref<boolean> = ref(false)
 
 const weekDays: string[] = calendarData.value.weekDays
 
@@ -84,6 +99,7 @@ const previousMonth = () => {
     }
 
     updateCalendar()
+    fetchMonthDiary()
 }
 
 const nextMonth = () => {
@@ -95,6 +111,7 @@ const nextMonth = () => {
         year.value += 1
     }
     updateCalendar()
+    fetchMonthDiary()
 }
 
 const isToday = (day: number, monthName: string): boolean => {
@@ -112,6 +129,41 @@ const selectDay = (day: number, monthIndex: number): void => {
 }
 
 const goToPage = (path: string) => router.push(path)
+
+const fetchMonthDiary = async () => {
+    try{
+        isFetching.value = true
+        const api = await handleGetMonthDiary({ month: String(month.value + 1), year: String(year.value) })
+
+        const moodCounter = api.data?.reduce((acc:any, diary:any) => {
+            if (diary.mood in acc) {
+                acc[diary.feeling]++;
+            } else {
+                acc[diary.feeling] = 1;
+            }
+            return acc
+        }, {})
+
+        moodCounts.value = moodCounter
+        monthDiaryList.value = api.data
+    }
+    catch(error){
+        console.log(error)
+        const toast = await toastController.create({
+            message: error as string,
+            duration: 1500,
+            position: 'top',
+            mode: 'ios'        
+        })
+
+        await toast.present()
+    }
+    finally{
+        isFetching.value = false
+    }
+}
+
+fetchMonthDiary()
 </script>
 
 <style scoped>
